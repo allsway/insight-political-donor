@@ -25,6 +25,14 @@ In order to calculate the median for median_values_by_zip.txt, the CMTE_ID is st
 ```
 For the running stream of data case, we must store data for each CMTE_ID and zip code combination, and must maintain each all transaction amount values in order to calculate the median.  
 
-In order to calculate the median for median_values_by_date.txt, the data must be outputted in sorted order (by both CMTE_ID and transaction date).  The data must be sorted at least once in order to acheive this result.  
+In order to calculate the median for median_values_by_date.txt, the data must be outputted in sorted order (by both CMTE_ID and transaction date).  The data must be sorted at least once in order to acheive this result. Because of this, I sort the incoming data by CMTE_ID and transaction date  prior to processing the data. As the data is in sorted order, and the output file should only have one line per CMTE_ID and transaction date combination, this data is only temporarily stored until the output line is computed for each CMTE_ID/transaction date combination.  For the sorted data case, I only store the transaction amount values and transaction total  until the next CMTE_ID or transaction date in the file is reached.  They are stored in a dictionary, and the median values are stored in an array:
+
+```
+  median_values = [250, 800, 320, 129, 31, 93, 99]
+```
+
+The transaction count are calculated from the resulting array of transaction amounts.  
+
+
 
 
