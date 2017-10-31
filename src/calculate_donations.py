@@ -27,8 +27,7 @@ def is_valid(date):
     if date is None or date == '':
         return False
     date = dateparser.parse(date)
-    print (type(date))
-    if type(date) == 'datetime.datetime':
+    if isinstance(date, datetime.datetime):
         return True
     else:
         return False
@@ -74,14 +73,6 @@ def initialize_zip():
     }
     return data_by_zip
 
-# Initialize data by date
-def initialize_date():
-    data_by_date = {
-        'median_values' : [],
-        'transaction_total' : 0
-    }
-    return data_by_date
-
 # Set output data
 def format_output(data_store,cmte_id,zip):
     median = get_median_zip(data_store[cmte_id][zip])
@@ -121,7 +112,6 @@ def open_data(input_file,index,zip_out_file,date_out_file):
         reader = csv.reader(f, delimiter='|')
         zip_output = read_data_by_zip(reader,index)
         date_output = read_data_by_date(input_file,index)
-        print (zip_out_file)
         write_data_to_file(zip_output,zip_out_file)
         write_data_to_file(date_output,date_out_file)
     finally:
