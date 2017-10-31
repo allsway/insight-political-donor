@@ -143,11 +143,7 @@ def read_data_by_date(input_file,index):
         for row in all_data:
             switch = False
             output_row = []
-<<<<<<< HEAD
             if not row[index['OTHER_ID']] and row[cmte_id] and is_valid(row[transaction_date]):
-=======
-            if not row[index['OTHER_ID']] and row[cmte_id] and is_valid(row[transaction_date]): 
->>>>>>> d405bd51e6c8e6beb7f551974a8053993bac5bf3
                 # keep going until we hit the next CMTE_ID
                 cur_cmte_id,cur_transaction_date = row[cmte_id], row[transaction_date]
                 # at switch, calculate and output the previous CMTE_ID/date combination data
