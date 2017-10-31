@@ -114,7 +114,6 @@ def gen_chunks(reader):
         chunk.append(line)
     yield chunk
 
-
 # opens data input and calls functions for our zip output and date output
 def open_data(input_file,index,zip_out_file,date_out_file):
     f = open(input_file, 'rt')
@@ -144,7 +143,7 @@ def read_data_by_date(input_file,index):
         for row in all_data:
             switch = False
             output_row = []
-            if not row[index['OTHER_ID']] and row[cmte_id] and row[transaction_date]: #and is_valid(row[index['TRANSACTION_DT']]):
+            if not row[index['OTHER_ID']] and row[cmte_id] and is_valid(row[transaction_date]): 
                 # keep going until we hit the next CMTE_ID
                 cur_cmte_id,cur_transaction_date = row[cmte_id], row[transaction_date]
                 # at switch, calculate and output the previous CMTE_ID/date combination data
@@ -173,7 +172,6 @@ def read_data_by_zip(reader,index):
     output_data, data_store =  [], {}
     for chunk in gen_chunks(reader):
         for row in chunk:
-            print (row)
             # continue only if OTHER_ID is an empty field, and TRANSACTION_AMT and CMTE_ID both have data
             zipcode, cmte_id, transaction_amt = reduce_zip(row[index['ZIP_CODE']]),  row[index['CMTE_ID']], row[index['TRANSACTION_AMT']]
             if not row[index['OTHER_ID']] and transaction_amt and cmte_id:
@@ -202,5 +200,4 @@ out_file_zip = sys.argv[3]
 out_file_date = sys.argv[4]
 
 index = get_index(data_dict)
-#read_data(input_data,index)
 open_data(input_data,index,out_file_zip,out_file_date)
