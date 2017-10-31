@@ -91,7 +91,7 @@ def write_data_to_file(output,filename):
 def round_median(num):
     return Decimal(num).quantize(Decimal(0), rounding=ROUND_HALF_UP)
 
-# Returns regular median from a sorted array (our median is sorted here, because the input data is sorted)
+# Returns regular median from a sorted array because all transaction values are available
 def get_median_date(median_values):
     median_values = sorted(median_values, key=float)
     # if array is odd, return middle element
@@ -188,12 +188,11 @@ def read_data_by_zip(reader,index):
                     data_store[cmte_id][zipcode]['transaction_total'] += float(transaction_amt)
                     # increment transaction count by 1
                     data_store[cmte_id][zipcode]['transaction_count'] += 1
-                    #fill_in_zip(data_store[cmte_id],zipcode,transaction_amt)
                     output_data.append( format_output(data_store,cmte_id,zipcode) )
     return output_data
 
 
-# reads in arguments: header file and data file
+# reads in arguments: header file, data file, and output file names
 data_dict = sys.argv[1]
 input_data = sys.argv[2]
 out_file_zip = sys.argv[3]
