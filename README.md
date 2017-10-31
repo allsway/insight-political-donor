@@ -2,11 +2,12 @@
 Calculates total, median and number of donations based on zip code and date
 
 #### Requirements
-The following script requires python3, and excepts the following modules to be installed:
+The following script requires python3, and expects the following modules to be installed:
 - csv
 - heapq
 - heapq_max
 - dateparser
+- datetime
 - decimal
 
 As the first argument, the script users the header file available for contributions by indviduals, for future flexibility: http://classic.fec.gov/finance/disclosure/metadata/indiv_header_file.csv
@@ -37,15 +38,15 @@ In order to calculate the median for median_values_by_zip.txt, the CMTE_ID is st
   ...
   }
 ```
-In the data streaming case, we must store data for each CMTE_ID and zip code combination, and must maintain each all transaction amount values in order to calculate the median.  
+In the data streaming case, we must store data for each CMTE_ID and zip code combination, and must maintain all transaction amount values in order to calculate the median.  
 
-In order to calculate the median for median_values_by_date.txt, the data must be outputted in sorted order (by both CMTE_ID and transaction date).  The data must be sorted at least once in order to acheive this result. Because of this, I sort the incoming data by CMTE_ID and transaction date  prior to processing the data. As the data is in sorted order, and the output file should only have one line per CMTE_ID and transaction date combination, this data is only temporarily stored until the output line is computed for each CMTE_ID/transaction date combination.  For the sorted data case, I only store the transaction amount values and transaction total  until the next CMTE_ID or transaction date in the file is reached.  They are stored in a dictionary, and the median values are stored in an array:
+In order to calculate the median for median_values_by_date.txt, the data must be outputted in sorted order (by both CMTE_ID and transaction date).  The data must be sorted at least once in order to acheive this result. Because of this, I sort the incoming data by CMTE_ID and transaction date  prior to processing the data. As the data is in sorted order, and the output file should only have one line per CMTE_ID and transaction date combination, this data is only temporarily stored until the output line is computed for each CMTE_ID/transaction date combination (until the next CMTE_ID or transaction date is reached).  The transaction values are the only thing that need to be stored, and they are stored in an array:
 
 ```
   median_values = [250, 800, 320, 129, 31, 93, 99]
 ```
 
-The transaction count are calculated from the resulting array of transaction amounts.  
+The transaction count and total are calculated from the resulting array of transaction amounts.  
 
 
 
