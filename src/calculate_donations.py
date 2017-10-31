@@ -81,14 +81,6 @@ def format_output(data_store,cmte_id,zip):
     output = [cmte_id, zip, median, data_store[cmte_id][zip]['transaction_count'], int(data_store[cmte_id][zip]['transaction_total'])]
     return output
 
-# Outputs our data files
-def write_data_to_file(output,filename):
-    print (output)
-    with open (filename, 'w') as f:
-        w = csv.writer(f, delimiter='|')
-        for row in output:
-            w.writerow(row)
-
 # Rounds 1.5 up to 2, and rounds 1.49 down to 1
 def round_median(num):
     return Decimal(num).quantize(Decimal(0), rounding=ROUND_HALF_UP)
@@ -132,12 +124,11 @@ def read_data_by_date(reader,index):
     old_cmte_id, old_date = all_data[0][cmte_id], all_data[0][transaction_date]
     for row in all_data:
         switch = False
-        #print (row[0], row[13], row[14])
-
+        # only continue if the OTHER_ID field is empty, and the CMTE_ID and date fields have data
         if not row[index['OTHER_ID']] and row[cmte_id] and is_valid(row[transaction_date]):
-            # keep going until we hit the next CMTE_ID
+            # Get the current row CMTE_ID and date values
             cur_cmte_id,cur_transaction_date = row[cmte_id], row[transaction_date]
-            # at switch, calculate and output the previous CMTE_ID/date combination data
+            # at line switch, calculate and output the previous CMTE_ID/date combination data
             if cur_cmte_id != old_cmte_id :
                 switch = True
                 # add our current values to output array
@@ -152,8 +143,8 @@ def read_data_by_date(reader,index):
                 old_date = cur_transaction_date
             # We only need to store the transaction amounts, and will calculate the rest based on this array
             median_values.append(row[transaction_amt])
+    # because we are only processing the previous row, must still process the final cmte_id/date combo after the loop
     median = round_median(get_median_date(median_values))
-    # because we are only processing the previous row, must still process the final cmte_id/date combo
     output_data.append([old_cmte_id,old_date, median,len(median_values),int(sum(map(float,median_values))) ])
     return output_data
 
@@ -167,8 +158,9 @@ def read_data_by_zip(reader,index):
             # if this is the first time we encounter a cmte_id, add it to our large hash
             if cmte_id not in data_store:
                 data_store[cmte_id] = {}
+            # Check if zipcode is valid
             if zipcode is not None and len(zipcode) > 4:
-                # If zipcode has not yet been seen for cmte_id, initialize zipcode dict
+                # If zipcode has not yet been seen for this cmte_id, initialize zipcode dict
                 if zipcode not in data_store[cmte_id]:
                     data_store[cmte_id][zipcode] = initialize_zip()
 
@@ -177,9 +169,16 @@ def read_data_by_zip(reader,index):
                 data_store[cmte_id][zipcode]['transaction_total'] += float(transaction_amt)
                 # increment transaction count by 1
                 data_store[cmte_id][zipcode]['transaction_count'] += 1
-                #fill_in_zip(data_store[cmte_id],zipcode,transaction_amt)
                 output_data.append( format_output(data_store,cmte_id,zipcode) )
     return output_data
+
+# Outputs our data files
+def write_data_to_file(output,filename):
+    print (output)
+    with open (filename, 'w') as f:
+        w = csv.writer(f, delimiter='|')
+        for row in output:
+            w.writerow(row)
 
 
 # reads in arguments: header file and data file
