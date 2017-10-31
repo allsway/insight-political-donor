@@ -112,7 +112,8 @@ def open_data(input_file,index,zip_out_file,date_out_file):
     try:
         reader = csv.reader(f, delimiter='|')
         zip_output = read_data_by_zip(reader,index)
-        date_output = read_data_by_date(input_file,index)
+        f.seek(0)
+        date_output = read_data_by_date(reader,index)
         write_data_to_file(zip_output,zip_out_file)
         write_data_to_file(date_output,date_out_file)
     finally:
@@ -120,10 +121,8 @@ def open_data(input_file,index,zip_out_file,date_out_file):
 
 
 # Parse the date by transaction date, in order
-def read_data_by_date(input_file,index):
+def read_data_by_date(reader,index):
     median_values, output_data = [], []
-    f  = open(input_file, 'r')
-    reader = csv.reader(f, delimiter='|')
 
     all_data = list(reader)
     cmte_id, transaction_amt, transaction_date = index['CMTE_ID'], index['TRANSACTION_AMT'], index['TRANSACTION_DT']
@@ -151,7 +150,6 @@ def read_data_by_date(input_file,index):
                 output_data.append([old_cmte_id, old_date, int(get_median_date(median_values)), len(median_values), int(sum(map(float,median_values)))])
                 median_values = []
                 old_date = cur_transaction_date
-
             # We only need to store the transaction amounts, and will calculate the rest based on this array
             median_values.append(row[transaction_amt])
     median = round_median(get_median_date(median_values))
@@ -180,7 +178,6 @@ def read_data_by_zip(reader,index):
                 # increment transaction count by 1
                 data_store[cmte_id][zipcode]['transaction_count'] += 1
                 #fill_in_zip(data_store[cmte_id],zipcode,transaction_amt)
-                print(get_median_zip(data_store[cmte_id][zipcode]))
                 output_data.append( format_output(data_store,cmte_id,zipcode) )
     return output_data
 
