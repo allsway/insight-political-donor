@@ -142,7 +142,6 @@ def read_data_by_date(input_file,index):
     old_cmte_id, old_date = all_data[0][cmte_id], all_data[0][transaction_date]
     for chunk in gen_chunks(reader):
         for row in all_data:
-            print (date)
             switch = False
             output_row = []
             if not row[index['OTHER_ID']] and row[cmte_id] and row[transaction_date]: #and is_valid(row[index['TRANSACTION_DT']]):
