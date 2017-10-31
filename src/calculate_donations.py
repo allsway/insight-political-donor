@@ -5,7 +5,6 @@ import re
 from heapq_max import *
 from heapq import *
 import dateparser
-import datetime
 from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_DOWN
 
 # Returns the column names mapped to their position in the file
@@ -81,6 +80,13 @@ def format_output(data_store,cmte_id,zip):
     output = [cmte_id, zip, median, data_store[cmte_id][zip]['transaction_count'], int(data_store[cmte_id][zip]['transaction_total'])]
     return output
 
+# Outputs our data files
+def write_data_to_file(output,filename):
+    with open (filename, 'w') as f:
+        w = csv.writer(f, delimiter='|')
+        for row in output:
+            w.writerow(row)
+
 # Rounds 1.5 up to 2, and rounds 1.49 down to 1
 def round_median(num):
     return Decimal(num).quantize(Decimal(0), rounding=ROUND_HALF_UP)
@@ -98,23 +104,35 @@ def get_median_date(median_values):
         median = (int(median_values[int(mid / 2)]) + int(median_values[int(mid / 2) - 1])) / 2.0
         return median
 
+# Read the data in chunks of 100
+def gen_chunks(reader):
+    chunk = []
+    for index, line in enumerate(reader):
+        if (index % 100 == 0 and index > 0):
+            yield chunk
+            del chunk[:]
+        chunk.append(line)
+    yield chunk
+
+
 # opens data input and calls functions for our zip output and date output
 def open_data(input_file,index,zip_out_file,date_out_file):
     f = open(input_file, 'rt')
+    zip_output = []
     try:
         reader = csv.reader(f, delimiter='|')
         zip_output = read_data_by_zip(reader,index)
-        f.seek(0)
-        date_output = read_data_by_date(reader,index)
+        date_output = read_data_by_date(input_file,index)
         write_data_to_file(zip_output,zip_out_file)
         write_data_to_file(date_output,date_out_file)
     finally:
         f.close()
 
-
 # Parse the date by transaction date, in order
-def read_data_by_date(reader,index):
+def read_data_by_date(input_file,index):
     median_values, output_data = [], []
+    f  = open(input_file, 'r')
+    reader = csv.reader(f, delimiter='|')
 
     all_data = list(reader)
     cmte_id, transaction_amt, transaction_date = index['CMTE_ID'], index['TRANSACTION_AMT'], index['TRANSACTION_DT']
@@ -122,63 +140,60 @@ def read_data_by_date(reader,index):
 
     # set our 'current' date and CMTE_ID
     old_cmte_id, old_date = all_data[0][cmte_id], all_data[0][transaction_date]
-    for row in all_data:
-        switch = False
-        # only continue if the OTHER_ID field is empty, and the CMTE_ID and date fields have data
-        if not row[index['OTHER_ID']] and row[cmte_id] and is_valid(row[transaction_date]):
-            # Get the current row CMTE_ID and date values
-            cur_cmte_id,cur_transaction_date = row[cmte_id], row[transaction_date]
-            # at line switch, calculate and output the previous CMTE_ID/date combination data
-            if cur_cmte_id != old_cmte_id :
-                switch = True
-                # add our current values to output array
-                output_data.append([old_cmte_id, old_date, int(get_median_date(median_values)), len(median_values), int(sum(map(float,median_values))) ])
-                # reset our data_by_date data
-                median_values = []
-                old_cmte_id = cur_cmte_id
-                old_date = cur_transaction_date
-            if cur_transaction_date != old_date and not switch:
-                output_data.append([old_cmte_id, old_date, int(get_median_date(median_values)), len(median_values), int(sum(map(float,median_values)))])
-                median_values = []
-                old_date = cur_transaction_date
-            # We only need to store the transaction amounts, and will calculate the rest based on this array
-            median_values.append(row[transaction_amt])
-    # because we are only processing the previous row, must still process the final cmte_id/date combo after the loop
-    median = round_median(get_median_date(median_values))
-    output_data.append([old_cmte_id,old_date, median,len(median_values),int(sum(map(float,median_values))) ])
+    for chunk in gen_chunks(reader):
+        for row in all_data:
+            print (date)
+            switch = False
+            output_row = []
+            if not row[index['OTHER_ID']] and row[cmte_id] and row[transaction_date]: #and is_valid(row[index['TRANSACTION_DT']]):
+                # keep going until we hit the next CMTE_ID
+                cur_cmte_id,cur_transaction_date = row[cmte_id], row[transaction_date]
+                # at switch, calculate and output the previous CMTE_ID/date combination data
+                if cur_cmte_id != old_cmte_id :
+                    switch = True
+                    # add our current values to output array
+                    output_data.append([old_cmte_id, old_date, round_median(get_median_date(median_values)), len(median_values), int(sum(map(float,median_values))) ])
+                    # reset our data_by_date data
+                    median_values = []
+                    old_cmte_id = cur_cmte_id
+                    old_date = cur_transaction_date
+                if cur_transaction_date != old_date and not switch:
+                    output_data.append([old_cmte_id, old_date, round_median(get_median_date(median_values)), len(median_values), int(sum(map(float,median_values))) ])
+                    median_values = []
+                    old_date = cur_transaction_date
+
+                # We only need to store the transaction amounts, and will calculate the rest based on this array
+                median_values.append(row[transaction_amt])
+        median = round_median(get_median_date(median_values))
+    # because we are only processing the previous row, must still process the final cmte_id/date combo
+        output_data.append([old_cmte_id,old_date, median,len(median_values),int(sum(map(float,median_values))) ])
     return output_data
 
 # Reads zip data and calculates all output for the zip_data file
 def read_data_by_zip(reader,index):
-    row_num, output_data, data_store =  0, [], {}
-    for row in reader:
-        # continue only if OTHER_ID is an empty field, and TRANSACTION_AMT and CMTE_ID both have data
-        zipcode, cmte_id, transaction_amt = reduce_zip(row[index['ZIP_CODE']]),  row[index['CMTE_ID']], row[index['TRANSACTION_AMT']]
-        if not row[index['OTHER_ID']] and transaction_amt and cmte_id:
-            # if this is the first time we encounter a cmte_id, add it to our large hash
-            if cmte_id not in data_store:
-                data_store[cmte_id] = {}
-            # Check if zipcode is valid
-            if zipcode is not None and len(zipcode) > 4:
-                # If zipcode has not yet been seen for this cmte_id, initialize zipcode dict
-                if zipcode not in data_store[cmte_id]:
-                    data_store[cmte_id][zipcode] = initialize_zip()
+    output_data, data_store =  [], {}
+    for chunk in gen_chunks(reader):
+        for row in chunk:
+            print (row)
+            # continue only if OTHER_ID is an empty field, and TRANSACTION_AMT and CMTE_ID both have data
+            zipcode, cmte_id, transaction_amt = reduce_zip(row[index['ZIP_CODE']]),  row[index['CMTE_ID']], row[index['TRANSACTION_AMT']]
+            if not row[index['OTHER_ID']] and transaction_amt and cmte_id:
+                # if this is the first time we encounter a cmte_id, add it to our large hash
+                if cmte_id not in data_store:
+                    data_store[cmte_id] = {}
+                if zipcode is not None and len(zipcode) > 4:
+                    # If zipcode has not yet been seen for cmte_id, initialize zipcode dict
+                    if zipcode not in data_store[cmte_id]:
+                        data_store[cmte_id][zipcode] = initialize_zip()
 
-                data_store[cmte_id][zipcode] = add_to_heap(data_store[cmte_id][zipcode],transaction_amt)
-                # update transaction total
-                data_store[cmte_id][zipcode]['transaction_total'] += float(transaction_amt)
-                # increment transaction count by 1
-                data_store[cmte_id][zipcode]['transaction_count'] += 1
-                output_data.append( format_output(data_store,cmte_id,zipcode) )
+                    data_store[cmte_id][zipcode] = add_to_heap(data_store[cmte_id][zipcode],transaction_amt)
+                    # update transaction total
+                    data_store[cmte_id][zipcode]['transaction_total'] += float(transaction_amt)
+                    # increment transaction count by 1
+                    data_store[cmte_id][zipcode]['transaction_count'] += 1
+                    #fill_in_zip(data_store[cmte_id],zipcode,transaction_amt)
+                    output_data.append( format_output(data_store,cmte_id,zipcode) )
     return output_data
-
-# Outputs our data files
-def write_data_to_file(output,filename):
-    print (output)
-    with open (filename, 'w') as f:
-        w = csv.writer(f, delimiter='|')
-        for row in output:
-            w.writerow(row)
 
 
 # reads in arguments: header file and data file
@@ -188,4 +203,5 @@ out_file_zip = sys.argv[3]
 out_file_date = sys.argv[4]
 
 index = get_index(data_dict)
+#read_data(input_data,index)
 open_data(input_data,index,out_file_zip,out_file_date)
