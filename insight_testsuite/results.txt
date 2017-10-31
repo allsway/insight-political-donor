@@ -1,3 +1,0 @@
-[Mon Oct 30 18:19:59 PDT 2017] 0 of 2 tests passed
-[Mon Oct 30 18:23:15 PDT 2017] 0 of 2 tests passed
-[Mon Oct 30 18:43:53 PDT 2017] 0 of 2 tests passed
