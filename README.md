@@ -13,7 +13,9 @@ As the first argument, the script users the header file available for contributi
 
 The file should be downloaded and included in the input directory.  
 
-#### translate_data.py
+The script can be run as `python ./src/calculate_donations.py ./input/{data_dict.csv} ./input/{input_data.txt} ./output/{output_zip_file_name.txt} ./output/{output_date_file_name.txt}` or it can be run with `./run.sh`
+
+#### calculate_donations.py
 Source code that reads in the political donor data, and produces the output 
 - median_values_by_zip.txt 
 - median_values_by_date.txt
