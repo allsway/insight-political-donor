@@ -22,7 +22,7 @@ Source code that reads in the political donor data, and produces the output
 - median_values_by_date.txt
 
 In order to calculate the median for median_values_by_zip.txt, the CMTE_ID is stored in a dictionary, which contains a sub-dictionary for each zipcode that has been contributed by.  Each zip code hash contains a 4 column dictionary.  The transaction amounts are then stored in a min heap and a max heap per zip code, in order to calculate the streaming median most efficiently.  The 4 columns of the zip code hash contain:
- - min heap (the upper half of the transaction amounts per zip code per CMTE_ID streamed in so far)
+ - min heap (the upper half of the transaction amounts per zip code per CMTE_ID streamed in so far).  If there are an odd number of transactions, the min heap should always contain the extra transaction.  
  - max heap (the lower half of the transaction amounts per zip code per CMTE_ID streamed in so far)
  - Running total of the number of transactions per zip code per CMTE_ID
  - Running sum of transactions per zip code per CMTE_ID streamed in so far
